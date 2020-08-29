@@ -1,21 +1,27 @@
 package coursefinder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 // import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+// import java.util.Map;
 import java.io.OutputStream;
 
 import org.json.*;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Driver;
-// import org.neo4j.driver.Record;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.Transaction;
+// import org.neo4j.driver.Transaction;
 // import org.neo4j.driver.Value;
 
 import static org.neo4j.driver.Values.parameters;
 
 import com.sun.net.httpserver.HttpExchange;
+import java.net.URI;
 import com.sun.net.httpserver.HttpHandler;
 
 public class StudentEndPoints implements HttpHandler {
@@ -36,8 +42,15 @@ public class StudentEndPoints implements HttpHandler {
             }
         } else if (exchange.getRequestMethod().equals("GET")) {
             try {
-                // handleGet(exchange);
-                System.out.printf("handling GET..\n");
+                URI path = exchange.getRequestURI();
+                if (path.getPath().compareTo("/allStudents") == 0)
+                    allStudents(exchange);
+                else if (path.getPath().startsWith("/findStudent"))
+                    findStudent(exchange);
+                else if (path.getPath().startsWith("/cGPA"))
+                    findStudentwithGPA(exchange);
+                else
+                    exchange.sendResponseHeaders(500, 0);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -50,7 +63,7 @@ public class StudentEndPoints implements HttpHandler {
         // convert the body to a JSON
         String body = "", response = "";
         String name = "";
-        int statusCode = 200, studentId = 0;
+        int studentId = 0;
         double cgpa = 0.0;
 
         JSONObject deserialized = new JSONObject();
@@ -59,8 +72,10 @@ public class StudentEndPoints implements HttpHandler {
             deserialized = new JSONObject(body);
         } catch (JSONException e) {
             exchange.sendResponseHeaders(400, response.length());
+            return ;
         } catch (IOException e) {
             exchange.sendResponseHeaders(500, response.length());
+            return ;
         }
 
         /* get the data from the JSON */
@@ -69,18 +84,21 @@ public class StudentEndPoints implements HttpHandler {
             name = deserialized.getString("name");
         else {
             exchange.sendResponseHeaders(400, response.length());
+            return ;
         }
         // student id
         if (deserialized.has("studentId"))
             studentId = deserialized.getInt("studentId");
         else {
             exchange.sendResponseHeaders(400, response.length());
+            return ;
         }
         // cgpa
         if (deserialized.has("cGPA"))
             cgpa = deserialized.getDouble("cGPA");
         else {
             exchange.sendResponseHeaders(400, response.length());
+            return ;
         }
 
         // create a node; if already exists, then update the name
@@ -88,17 +106,19 @@ public class StudentEndPoints implements HttpHandler {
 
         // failure to excute query => status code = 400
         if (errorcheck == 0) {
-            statusCode = 400;
+            exchange.sendResponseHeaders(400, response.length());
+            return ;
         }
 
-        exchange.sendResponseHeaders(statusCode, response.length());
+        exchange.sendResponseHeaders(200, response.length());
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());
         os.close();
     }
 
     private int checkAndCreateNode(String name, int studentId, double cgpa) {
-        System.out.printf("name %s, id %d cgpa %f\n", name, studentId, cgpa);
+        if (cgpa < 0.0 || cgpa > 4.0)
+            return (0);
         try (Session session = driver.session()) {
             // making our cypher query
             session.run(
@@ -112,4 +132,148 @@ public class StudentEndPoints implements HttpHandler {
             return (0);
         }
     }
+
+    private void allStudents(HttpExchange exchange) throws IOException {
+        // int statusCode = 200;
+        String response = "";
+        // get all the students
+        try (Session session = driver.session()) {
+            // cypher query
+            Result result = session.run("MATCH (n: Student) RETURN n.name as name, n.id as id, n.cgpa as cgpa");
+            // if no results found, then set the status to 404
+            if (result.hasNext() == false) {
+                exchange.sendResponseHeaders(404, -1);
+                return ;
+            }
+            else {
+                // otherwise, loop through all the results and create your json string
+                List<Student> students = new ArrayList<Student>();
+                while (result.hasNext()) {
+                    Record rec = result.next();
+                    Student student = new Student(rec.get("name").asString(), rec.get("id").asInt(),
+                            rec.get("cgpa").asDouble());
+                    students.add(student);
+                }
+                // create the json response
+                response = "[";
+                for (Student s : students) {
+                    // create the student info and concat it to the response
+                    String student_info = "{ \"name\" : " + s.name + ", \"id\" : " + s.id + ", \"cGPA\" : " + s.cgpa
+                            + " },";
+                    response = response.concat(student_info);
+                }
+                // replace the last comma and add the closing bracket
+                response = response.replaceAll(",$", "");
+                response = response.concat("]");
+            }
+            // send back appropriate responses
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        } catch (Exception e) {
+            // return with a 400 if there is an exception anywhere
+            exchange.sendResponseHeaders(400, response.length());
+        }
+    }
+
+    private void findStudent(HttpExchange exchange) throws IOException {
+        String response = "";
+        // get the id or name in the uri
+        Map<String, String> params = Utils.convertFromGetToMap(exchange, new String[] { "studentId", "studentName" });
+        // cannot find the student if the id and name isn't provided
+        if (!params.containsKey("studentId") && !params.containsKey("studentName")) {
+            exchange.sendResponseHeaders(404, -1);
+            return;
+        }
+        try (Session session = driver.session()) {
+            // cypher query
+            Result result;
+            if (params.containsKey("studentId")) {
+                result = session.run(
+                        "MATCH (n: Student) where n.id = $id RETURN n.name as name, n.id as id, n.cgpa as cgpa",
+                        parameters("id", Integer.parseInt(params.get("studentId"))));
+            } else {
+                result = session.run(
+                        "MATCH (n: Student) where n.name = $name RETURN n.name as name, n.id as id, n.cgpa as cgpa",
+                        parameters("name", params.get("studentName")));
+            }
+            // if no results found, then set the status to 404
+            if (result.hasNext() == false) {
+                exchange.sendResponseHeaders(404, -1);
+                return;
+            } else {
+                // otherwise, loop through all the results and create your json string
+                List<Student> students = new ArrayList<Student>();
+                while (result.hasNext()) {
+                    Record rec = result.next();
+                    Student student = new Student(rec.get("name").asString(), rec.get("id").asInt(),
+                            rec.get("cgpa").asDouble());
+                    students.add(student);
+                }
+                // create the json response
+                response = "[";
+                for (Student s : students) {
+                    // create the student info and concat it to the response
+                    String student_info = "{ \"name\" : " + s.name + ", \"id\" : " + s.id + ", \"cGPA\" : " + s.cgpa
+                            + " },";
+                    response = response.concat(student_info);
+                }
+                // replace the last comma and add the closing bracket
+                response = response.replaceAll(",$", "");
+                response = response.concat("]");
+            }
+            // send back appropriate responses
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        } catch (Exception e) {
+            // return with a 400 if there is an exception anywhere
+            System.out.println("exception happened:");
+            e.printStackTrace();
+            exchange.sendResponseHeaders(400, response.length());
+        }
+    }
+
+    private void findStudentwithGPA(HttpExchange exchange) throws IOException {
+        String response = "";
+        // get the id or name in the uri
+        Map<String, String> params = Utils.convertFromGetToMap(exchange, new String[] { "studentId", "studentName" });
+        // cannot find the student if the id and name isn't provided
+        if (!params.containsKey("studentId") && !params.containsKey("studentName")) {
+            exchange.sendResponseHeaders(404, -1);
+            return;
+        }
+        try (Session session = driver.session()) {
+            // cypher query
+            Result result;
+            if (params.containsKey("studentId")) {
+                result = session.run("MATCH (n: Student) where n.id = $id RETURN n.cgpa as cgpa",
+                        parameters("id", Integer.parseInt(params.get("studentId"))));
+            } else {
+                result = session.run("MATCH (n: Student) where n.name = $name RETURN n.cgpa as cgpa",
+                        parameters("name", params.get("studentName")));
+            }
+            // if no results found, then set the status to 404
+            if (result.hasNext() == false) {
+                exchange.sendResponseHeaders(404, -1);
+                return;
+            } else {
+                // create the json response
+                String student_info = "{ \"cGPA\" : " + result.single().get("cgpa").asDouble() + " }";
+                response = response.concat(student_info);
+            }
+            // send back appropriate responses
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        } catch (Exception e) {
+            // return with a 400 if there is an exception anywhere
+            e.printStackTrace();
+            exchange.sendResponseHeaders(400, response.length());
+        }
+    }
+
 }

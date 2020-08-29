@@ -15,11 +15,10 @@ public class App
         
         /* Student APIs */
         server.createContext("/addStudent", new StudentEndPoints("neo4j", "password"));
-        // server.createContext("/allStudents", new StudentEndPoints("neo4j", "password"));
-        // server.createContext("/findStudent/{student-name}", new StudentEndPoints("neo4j", "password"));
-        // server.createContext("/findStudent/{student-id}", new StudentEndPoints("neo4j", "password"));
-        // server.createContext("/cGPA/{student-id}", new StudentEndPoints("neo4j", "password"));
-        // server.createContext("/cGPA/{student-name}", new StudentEndPoints("neo4j", "password"));
+        server.createContext("/allStudents", new StudentEndPoints("neo4j", "password"));
+        server.createContext("/findStudent", new StudentEndPoints("neo4j", "password"));
+        server.createContext("/cGPA", new StudentEndPoints("neo4j", "password"));
+
 
         /* Course APIs */
         // server.createContext("/addCourse", new CoursesEndPoints("neo4j", "password"));
