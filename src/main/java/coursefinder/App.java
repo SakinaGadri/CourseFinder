@@ -14,14 +14,22 @@ public class App
         server.start();
         
         /* Student APIs */
-        server.createContext("/addStudent", new StudentEndPoints("neo4j", "password"));
-        server.createContext("/allStudents", new StudentEndPoints("neo4j", "password"));
-        server.createContext("/findStudent", new StudentEndPoints("neo4j", "password"));
-        server.createContext("/cGPA", new StudentEndPoints("neo4j", "password"));
+        server.createContext("/addStudent", new StudentEndPoints());
+        server.createContext("/allStudents", new StudentEndPoints());
+        server.createContext("/findStudent", new StudentEndPoints());
+        server.createContext("/cGPA", new StudentEndPoints());
 
 
         /* Course APIs */
-        // server.createContext("/addCourse", new CoursesEndPoints("neo4j", "password"));
+        server.createContext("/addCourse", new CourseEndPoints());
+        server.createContext("/allCourses", new CourseEndPoints());
+        
+        server.createContext("/findCourse", new CourseEndPoints());
+        server.createContext("/courseInstructor", new CourseEndPoints());
+        server.createContext("/courseAverage", new CourseEndPoints());
+        server.createContext("/courseStatus", new CourseEndPoints());
+        server.createContext("/requisteCourses", new CourseEndPoints());
+        server.createContext("/commonCourses", new CourseEndPoints());
 
         /* Relationship between Student and Courses */
 

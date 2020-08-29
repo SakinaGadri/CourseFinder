@@ -2,21 +2,15 @@ package coursefinder;
 
 import java.io.IOException;
 import java.util.ArrayList;
-// import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-// import java.util.Map;
 import java.io.OutputStream;
 
 import org.json.*;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
-// import org.neo4j.driver.Transaction;
-// import org.neo4j.driver.Value;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -28,8 +22,9 @@ public class StudentEndPoints implements HttpHandler {
 
     private Driver driver;
 
-    public StudentEndPoints(String username, String password) {
-        driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic(username, password));
+    /* Establishes the Driver of the database  */
+    public StudentEndPoints() {
+        driver = GraphDriver.getDriver();
     }
 
     @Override
@@ -50,18 +45,18 @@ public class StudentEndPoints implements HttpHandler {
                 else if (path.getPath().startsWith("/cGPA"))
                     findStudentwithGPA(exchange);
                 else
-                    exchange.sendResponseHeaders(500, 0);
+                    exchange.sendResponseHeaders(500, -1);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            exchange.sendResponseHeaders(500, 0);
+            exchange.sendResponseHeaders(500, -1);
         }
     }
 
     private void handlePut(HttpExchange exchange) throws IOException, JSONException {
         // convert the body to a JSON
-        String body = "", response = "";
+        String body = "";
         String name = "";
         int studentId = 0;
         double cgpa = 0.0;
@@ -71,10 +66,10 @@ public class StudentEndPoints implements HttpHandler {
             body = Utils.convert(exchange.getRequestBody());
             deserialized = new JSONObject(body);
         } catch (JSONException e) {
-            exchange.sendResponseHeaders(400, response.length());
+            exchange.sendResponseHeaders(400, -1);
             return ;
         } catch (IOException e) {
-            exchange.sendResponseHeaders(500, response.length());
+            exchange.sendResponseHeaders(500, -1);
             return ;
         }
 
@@ -83,21 +78,21 @@ public class StudentEndPoints implements HttpHandler {
         if (deserialized.has("name"))
             name = deserialized.getString("name");
         else {
-            exchange.sendResponseHeaders(400, response.length());
+            exchange.sendResponseHeaders(400, -1);
             return ;
         }
         // student id
         if (deserialized.has("studentId"))
             studentId = deserialized.getInt("studentId");
         else {
-            exchange.sendResponseHeaders(400, response.length());
+            exchange.sendResponseHeaders(400, -1);
             return ;
         }
         // cgpa
         if (deserialized.has("cGPA"))
             cgpa = deserialized.getDouble("cGPA");
         else {
-            exchange.sendResponseHeaders(400, response.length());
+            exchange.sendResponseHeaders(400, -1);
             return ;
         }
 
@@ -106,13 +101,13 @@ public class StudentEndPoints implements HttpHandler {
 
         // failure to excute query => status code = 400
         if (errorcheck == 0) {
-            exchange.sendResponseHeaders(400, response.length());
+            exchange.sendResponseHeaders(404, -1);
             return ;
         }
 
-        exchange.sendResponseHeaders(200, response.length());
+        exchange.sendResponseHeaders(200, 1);
         OutputStream os = exchange.getResponseBody();
-        os.write(response.getBytes());
+        os.write("".getBytes());
         os.close();
     }
 
@@ -134,7 +129,6 @@ public class StudentEndPoints implements HttpHandler {
     }
 
     private void allStudents(HttpExchange exchange) throws IOException {
-        // int statusCode = 200;
         String response = "";
         // get all the students
         try (Session session = driver.session()) {
@@ -230,7 +224,6 @@ public class StudentEndPoints implements HttpHandler {
             os.close();
         } catch (Exception e) {
             // return with a 400 if there is an exception anywhere
-            System.out.println("exception happened:");
             e.printStackTrace();
             exchange.sendResponseHeaders(400, response.length());
         }
