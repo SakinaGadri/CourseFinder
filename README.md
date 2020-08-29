@@ -1,13 +1,125 @@
 # Course Finder Project
 
-APIs:
-Student End Points
-1. /addStudent done
-2. /allStudents done
-3. /findStudent/{student-name} done
-4. /findStudent/{student-id} done
-5. /cGPA/{student-id} done
-6. /cGPA/{student-name} done
+Intro...
+
+# Course Finder REST API Documentation
+
+## Students APIs:
+
+### Create
+* description: Creates and stores a Student in the database with the following properties:
+    - `id`: student id
+    - `name`: student name
+    - `cGPA`: cGPA of student 
+* request: POST `/addStudent`
+    - content-type: `application/json`
+    - body: object
+        - id: (int) student id
+        - name (string) student name
+        - cGPA (int) cGPA of student 
+* response: 200
+    * content-type: `application/json`
+    - body: TODO
+    * TODO: what do I return???
+* response: 404 TODO: elaborate
+    - body: TODO
+* response: 500 TODO: elaborate
+    - body: TODO
+* example:
+``` 
+$ curl -X POST 
+       -H "Content-Type: `application/json`"  
+       -d '{"id": 1004 ,"name":"Sakina", "cGPA":3.0 }'
+       http://localhost:8080/addStudent'
+```
+
+### Read
+
+- description: retrieves all the students in the database
+- request: `GET /allStudents`   
+- response: 200
+    - content-type: `application/json`
+    - body: object
+        - id: (int) student id
+        - name (string) student name
+        - cGPA (int) cGPA of student 
+- response: 404
+    - body: TODO
+- response: 400
+    - body: TODO
+- response: 500
+    - body: server side error
+``` 
+$ curl -X GET http://localhost:8080/allStudents
+``` 
+
+- description: retrieves the students with `studentName` in the database
+- request: `GET /findStudent/:studentName`
+- response: 200
+    - content-type: `application/json`
+    - body: list of objects
+        - id: (int) student id
+        - name (string) student name
+        - cGPA (int) cGPA of student 
+- response: 404
+    - body: student with `studentName` not found
+- response: 400
+    - body: TODO
+- response: 500
+    - body: server side error
+``` 
+$ curl -X GET http://localhost:8080/findStudent?studentName=Sakina
+```
+
+- description: retrieves the students with `studentId` in the database
+- request: `GET /findStudent/:studentId`
+- response: 200
+    - content-type: `application/json`
+    - body: list of object
+        - id: (int) student id
+        - name (string) student name
+        - cGPA (int) cGPA of student 
+- response: 404
+    - body: student with `studentId` not found
+- response: 400
+    - body: TODO
+- response: 500
+    - body: server side error
+``` 
+$ curl -X GET http://localhost:8080/findStudent?studentId=1004
+```
+
+- description: retrieves the cGPA of a student with `studentId` in the database
+- request: `GET /cGPA/:studentId`
+- response: 200
+    - content-type: `application/json`
+    - body: object
+        - cGPA (int) cGPA of student 
+- response: 404
+    - body: student with `studentId` not found
+- response: 400
+    - body: TODO
+- response: 500
+    - body: server side error
+``` 
+$ curl -X GET http://localhost:8080/cGPA?studentId=1004
+```
+
+- description: retrieves the cGPA of a student with `studentName` in the database
+- request: `GET /cGPA/:studentName`
+- response: 200
+    - content-type: `application/json`
+    - body: object
+        - cGPA (int) cGPA of student 
+- response: 404
+    - body: student with `studentName` not found
+- response: 400
+    - body: TODO
+- response: 500
+    - body: server side error
+``` 
+$ curl -X GET http://localhost:8080/cGPA?studentName=Sakina
+```
 
 Course End Points
 1. /addCourse
