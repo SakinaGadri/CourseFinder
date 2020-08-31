@@ -19,19 +19,21 @@ public class App
         server.createContext("/findStudent", new StudentEndPoints());
         server.createContext("/cGPA", new StudentEndPoints());
 
-
         /* Course APIs */
         server.createContext("/addCourse", new CourseEndPoints());
         server.createContext("/allCourses", new CourseEndPoints());
-        
         server.createContext("/findCourse", new CourseEndPoints());
         server.createContext("/courseInstructor", new CourseEndPoints());
         server.createContext("/courseAverage", new CourseEndPoints());
         server.createContext("/courseStatus", new CourseEndPoints());
-        server.createContext("/requisteCourses", new CourseEndPoints());
-        server.createContext("/commonCourses", new CourseEndPoints());
 
         /* Relationship between Student and Courses */
+        server.createContext("/studentCourseRelation", new RelationEndPoints());
+        server.createContext("/similarCourseRelation", new RelationEndPoints());
+        server.createContext("/requisiteCourseRelation", new RelationEndPoints());
+        server.createContext("/eligibleCourses", new RelationEndPoints());
+        server.createContext("/similarCourses", new RelationEndPoints());
+        server.createContext("/requisiteCourses", new RelationEndPoints());
 
         System.out.printf("Server started on port %d...\n", PORT);
     }

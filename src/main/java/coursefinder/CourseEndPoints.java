@@ -122,7 +122,6 @@ public class CourseEndPoints implements HttpHandler {
 
         // failure to excute query => status code = 400
         if (errorcheck == 0) {
-            System.out.println("error was 0");
             exchange.sendResponseHeaders(400, -1);
             return;
         }
@@ -165,9 +164,9 @@ public class CourseEndPoints implements HttpHandler {
                 List<Course> courses = new ArrayList<Course>();
                 while (result.hasNext()) {
                     Record rec = result.next();
-                    Course student = new Course(rec.get("name").asString(), rec.get("code").asString(),
+                    Course course = new Course(rec.get("name").asString(), rec.get("code").asString(),
                             rec.get("prof").asString(), rec.get("average").asDouble(), rec.get("status").asString());
-                    courses.add(student);
+                    courses.add(course);
                 }
                 // create the json response
                 response = "[";
@@ -199,7 +198,6 @@ public class CourseEndPoints implements HttpHandler {
         Map<String, String> params = Utils.convertFromGetToMap(exchange, new String[] { "courseCode", "courseName" });
         // cannot find the student if the id and name isn't provided
         if (!params.containsKey("courseCode") && !params.containsKey("courseName")) {
-            System.out.println("course name or course code not passed in");
             exchange.sendResponseHeaders(400, -1);
             return;
         }
@@ -217,7 +215,6 @@ public class CourseEndPoints implements HttpHandler {
             }
             // if no results found, then set the status to 404
             if (result.hasNext() == false) {
-                System.out.println("nothing found in db");
                 exchange.sendResponseHeaders(404, -1);
                 return;
             } else {
@@ -225,9 +222,9 @@ public class CourseEndPoints implements HttpHandler {
                 List<Course> courses = new ArrayList<Course>();
                 while (result.hasNext()) {
                     Record rec = result.next();
-                    Course student = new Course(rec.get("name").asString(), rec.get("code").asString(),
+                    Course course = new Course(rec.get("name").asString(), rec.get("code").asString(),
                             rec.get("prof").asString(), rec.get("average").asDouble(), rec.get("status").asString());
-                    courses.add(student);
+                    courses.add(course);
                 }
                 // create the json response
                 response = "[";

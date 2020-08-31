@@ -26,7 +26,6 @@ public class Utils {
 
     public static Map<String, String> convertFromGetToMap(HttpExchange exchange, String[] params) {
         String query = exchange.getRequestURI().getQuery();
-        System.out.println(query);
         List<String> validParams = Arrays.asList(params);
         Map<String, String> result = new HashMap<String, String>();
         for (String param : query.split("&")) {

@@ -177,7 +177,7 @@ public class StudentEndPoints implements HttpHandler {
         Map<String, String> params = Utils.convertFromGetToMap(exchange, new String[] { "studentId", "studentName" });
         // cannot find the student if the id and name isn't provided
         if (!params.containsKey("studentId") && !params.containsKey("studentName")) {
-            exchange.sendResponseHeaders(404, -1);
+            exchange.sendResponseHeaders(400, -1);
             return;
         }
         try (Session session = driver.session()) {
